@@ -145,16 +145,17 @@ export function getBenefitRulesByCode(code: string): BenefitRule[] {
 }
 
 export function searchStocksByName(query: string): Stock[] {
-    const lowerQuery = query.toLowerCase();
+    const lowerQuery = (query || "").toLowerCase();
     return PRESET_STOCKS.filter(s =>
-        s.name.toLowerCase().includes(lowerQuery) ||
-        s.code.includes(query)
+        s && (s.name.toLowerCase().includes(lowerQuery) || s.code.includes(query))
     );
 }
 
 export function calculateHoldingYears(acquisitionDate: string | undefined): number {
     if (!acquisitionDate) return 0;
     const acquired = new Date(acquisitionDate);
+    if (isNaN(acquired.getTime())) return 0;
+
     const now = new Date();
 
     let years = now.getFullYear() - acquired.getFullYear();

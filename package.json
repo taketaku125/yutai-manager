@@ -3,13 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -H 0.0.0.0",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.13",
+    "@supabase/supabase-js": "^2.91.1",
     "ai": "^6.0.49",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

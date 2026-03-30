@@ -8,7 +8,7 @@ interface BenefitTimelineProps {
     events: TimelineEvent[];
 }
 
-const CATEGORY_ICONS = {
+const CATEGORY_ICONS: Record<string, any> = {
     food: UtensilsCrossed,
     discount: Ticket,
     gift: Gift,
@@ -17,11 +17,14 @@ const CATEGORY_ICONS = {
     other: Gift,
 };
 
-export function BenefitTimeline({ events }: BenefitTimelineProps) {
+export function BenefitTimeline({ events = [] }: BenefitTimelineProps) {
+    // Arrayチェック
+    const safeEvents = Array.isArray(events) ? events : [];
+
     // Group events by month
     const eventsByMonth: Record<number, TimelineEvent[]> = {};
     for (let i = 1; i <= 12; i++) {
-        eventsByMonth[i] = events.filter((e) => e.month === i);
+        eventsByMonth[i] = safeEvents.filter((e) => e && e.month === i);
     }
 
     const currentMonth = new Date().getMonth() + 1; // 1-indexed
@@ -31,7 +34,7 @@ export function BenefitTimeline({ events }: BenefitTimelineProps) {
             {/* Month Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
-                    const monthEvents = eventsByMonth[month];
+                    const monthEvents = eventsByMonth[month] || [];
                     const isCurrentMonth = month === currentMonth;
 
                     return (
@@ -66,8 +69,10 @@ export function BenefitTimeline({ events }: BenefitTimelineProps) {
                                     <p className="text-white/30 text-sm">予定なし</p>
                                 ) : (
                                     monthEvents.map((event, idx) => {
-                                        const Icon = CATEGORY_ICONS[event.category];
-                                        const config = CATEGORY_CONFIG[event.category];
+                                        if (!event || !event.category || !event.stock) return null;
+
+                                        const Icon = CATEGORY_ICONS[event.category] || Gift;
+                                        const config = CATEGORY_CONFIG[event.category] || { label: "その他", color: "bg-slate-500" };
 
                                         return (
                                             <div
@@ -102,11 +107,14 @@ export function BenefitTimeline({ events }: BenefitTimelineProps) {
                                                             >
                                                                 {event.type === "vesting" ? "権利確定" : "到着予定"}
                                                             </span>
+                                                            {event.isLongTermBenefit && (
+                                                                <span className="text-[10px] px-1 rounded bg-amber-500/20 text-amber-300">長期</span>
+                                                            )}
                                                         </div>
-                                                        <p className="font-medium text-white/90 truncate">
-                                                            {event.stock.name}
+                                                        <p className="font-medium text-white/90 break-words">
+                                                            {event.stock.name || event.stock.code}
                                                         </p>
-                                                        <p className="text-white/50 text-xs truncate mt-0.5">
+                                                        <p className="text-white/50 text-xs mt-1 break-words">
                                                             {event.description}
                                                         </p>
                                                     </div>
