@@ -4,6 +4,7 @@ import { useState } from "react";
 import { UserHolding, Stock, BenefitRule, AIBenefitResponse, BenefitCategory } from "@/types";
 import { PRESET_STOCKS, getBenefitRulesByCode, searchStocksByName, calculateHoldingYears } from "@/data/staticStocks";
 import { cn, CATEGORY_CONFIG } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
 import { Plus, Trash2, Sparkles, Search, X, Loader2, AlertCircle, Calendar, Clock, RefreshCw, Edit2, Save } from "lucide-react";
 
 interface PortfolioManagerProps {
