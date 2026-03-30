@@ -2,13 +2,13 @@
 
 import { TimelineEvent } from "@/types";
 import { CATEGORY_CONFIG, MONTH_NAMES, cn } from "@/lib/utils";
-import { Calendar, Gift, Plane, UtensilsCrossed, Ticket, CreditCard } from "lucide-react";
+import { Calendar, Gift, Plane, UtensilsCrossed, Ticket, CreditCard, type LucideIcon } from "lucide-react";
 
 interface BenefitTimelineProps {
     events: TimelineEvent[];
 }
 
-const CATEGORY_ICONS: Record<string, any> = {
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
     food: UtensilsCrossed,
     discount: Ticket,
     gift: Gift,
