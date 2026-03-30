@@ -2,6 +2,7 @@ import { google } from "@ai-sdk/google";
 import { generateObject } from "ai";
 import { z } from "zod";
 import { NextRequest, NextResponse } from "next/server";
+import { supabase } from "@/lib/supabase";
 
 // Response schema for AI-generated benefit info
 const BenefitSchema = z.object({
@@ -39,15 +40,29 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Check if API key is configured
-        if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+        // 1. Session check (Restrict to authenticated users)
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
             return NextResponse.json(
-                { error: "AI APIキーが設定されていません。環境変数 GOOGLE_GENERATIVE_AI_API_KEY を設定してください。" },
-                { status: 500 }
+                { error: "AI検索を利用するにはログインが必要です" },
+                { status: 401 }
             );
         }
 
-        const query = stockCode || stockName;
+        const query = (stockCode || stockName).trim();
+
+        // 2. Cache Check
+        if (stockCode) {
+            const { data: cached } = await supabase
+                .from('benefit_cache')
+                .select('data')
+                .eq('stock_code', stockCode)
+                .single();
+
+            if (cached) {
+                return NextResponse.json(cached.data);
+            }
+        }
 
         const { object } = await generateObject({
             model: google("gemini-2.0-flash"),
@@ -81,6 +96,18 @@ export async function POST(request: NextRequest) {
     - 少しでも記憶が曖昧、またはノイズが混ざりそうな場合は "medium" 以下。
 - **source**: 「2024年のIR情報に基づく」「公式発表データより」など根拠を記載。`,
         });
+
+        // 3. Save to Cache
+        if (stockCode && object) {
+            await supabase
+                .from('benefit_cache')
+                .upsert({
+                    stock_code: stockCode,
+                    stock_name: object.stockName,
+                    data: object,
+                    updated_at: new Date().toISOString()
+                });
+        }
 
         return NextResponse.json(object);
     } catch (error) {
