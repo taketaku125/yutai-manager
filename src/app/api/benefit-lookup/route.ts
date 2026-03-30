@@ -41,8 +41,18 @@ export async function POST(request: NextRequest) {
         }
 
         // 1. Session check (Restrict to authenticated users)
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
+        const authHeader = request.headers.get("Authorization");
+        let user = null;
+
+        if (authHeader && authHeader.startsWith("Bearer ")) {
+            const token = authHeader.split(" ")[1];
+            const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
+            if (!authError && authUser) {
+                user = authUser;
+            }
+        }
+
+        if (!user) {
             return NextResponse.json(
                 { error: "AI検索を利用するにはログインが必要です" },
                 { status: 401 }

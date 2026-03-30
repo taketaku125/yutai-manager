@@ -63,9 +63,16 @@ export function PortfolioManager({
         if (!codeOverride) setAiResult(null);
 
         try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const headers: Record<string, string> = { "Content-Type": "application/json" };
+            
+            if (session?.access_token) {
+                headers["Authorization"] = `Bearer ${session.access_token}`;
+            }
+
             const res = await fetch("/api/benefit-lookup", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers,
                 body: JSON.stringify({ stockCode: query, stockName: query }),
             });
 
