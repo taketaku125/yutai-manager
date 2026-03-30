@@ -2,7 +2,7 @@ import { supabase } from "./supabase";
 import { UserHolding, BenefitRule, Stock } from "@/types";
 
 // Note: In Cloud environment (Vercel), we use Supabase instead of local JSON files.
-// Data is stored in 'portfolio' table with ID 'single-user' (as we only have one user for now).
+// Data is stored in 'portfolio' table with ID being the user's UUID.
 
 interface Database {
   holdings: UserHolding[];
@@ -16,12 +16,12 @@ const INITIAL_DB: Database = {
   customStocks: [],
 };
 
-export async function readDb(): Promise<Database> {
+export async function readDb(userId: string = 'single-user'): Promise<Database> {
   try {
     const { data, error } = await supabase
       .from('portfolio')
       .select('holdings, custom_rules, custom_stocks')
-      .eq('id', 'single-user')
+      .eq('id', userId)
       .single();
 
     if (error) {
@@ -43,12 +43,12 @@ export async function readDb(): Promise<Database> {
   }
 }
 
-export async function writeDb(db: Database): Promise<void> {
+export async function writeDb(db: Database, userId: string = 'single-user'): Promise<void> {
   try {
     const { error } = await supabase
       .from('portfolio')
       .upsert({
-        id: 'single-user',
+        id: userId,
         holdings: db.holdings,
         custom_rules: db.customRules,
         custom_stocks: db.customStocks,

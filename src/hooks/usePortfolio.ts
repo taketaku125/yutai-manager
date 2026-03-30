@@ -2,27 +2,43 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { UserHolding, BenefitRule, Stock } from "@/types";
+import { supabase } from "@/lib/supabase";
 
-export function usePortfolio() {
+export function usePortfolio(userId: string | undefined) {
     const [holdings, setHoldings] = useState<UserHolding[]>([]);
     const [customRules, setCustomRules] = useState<BenefitRule[]>([]);
     const [customStocks, setCustomStocks] = useState<Stock[]>([]);
+    const [shareId, setShareId] = useState<string | null>(null);
     const [isLoaded, setIsLoaded] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
 
-    // 初回読み込み
+    // Initial load from Supabase
     useEffect(() => {
+        if (!userId) {
+            setIsLoaded(true);
+            return;
+        }
+
         async function loadData() {
             try {
-                // キャッシュ回避のためにランダムなクエリを付与
-                const res = await fetch(`/api/portfolio?t=${Date.now()}`, {
-                    cache: 'no-store'
-                });
-                if (res.ok) {
-                    const data = await res.json();
+                const { data, error } = await supabase
+                    .from('portfolio')
+                    .select('holdings, custom_rules, custom_stocks, share_id')
+                    .eq('id', userId)
+                    .single();
+
+                if (error) {
+                    if (error.code !== 'PGRST116') { // Record not found
+                        console.error('Supabase load error:', error);
+                    }
+                    return;
+                }
+
+                if (data) {
                     setHoldings(data.holdings || []);
-                    setCustomRules(data.customRules || []);
-                    setCustomStocks(data.customStocks || []);
+                    setCustomRules(data.custom_rules || []);
+                    setCustomStocks(data.custom_stocks || []);
+                    setShareId(data.share_id || null);
                 }
             } catch (e) {
                 console.error("Failed to load data from server", e);
@@ -31,12 +47,12 @@ export function usePortfolio() {
             }
         }
         loadData();
-    }, []);
+    }, [userId]);
 
-    // 自動保存ロジック (Debounced sync)
+    // Auto-save logic (Debounced sync)
     const isFirstRun = useRef(true);
     useEffect(() => {
-        if (!isLoaded) return;
+        if (!isLoaded || !userId) return;
         if (isFirstRun.current) {
             isFirstRun.current = false;
             return;
@@ -45,20 +61,26 @@ export function usePortfolio() {
         const timer = setTimeout(async () => {
             setIsSyncing(true);
             try {
-                await fetch("/api/portfolio", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ holdings, customRules, customStocks }),
-                });
+                const { error } = await supabase
+                    .from('portfolio')
+                    .upsert({
+                        id: userId,
+                        holdings,
+                        custom_rules: customRules,
+                        custom_stocks: customStocks,
+                        updated_at: new Date().toISOString()
+                    });
+
+                if (error) throw error;
             } catch (e) {
                 console.error("Failed to sync with server", e);
             } finally {
                 setIsSyncing(false);
             }
-        }, 500); // 500msのデバウンス
+        }, 800); // 800ms debounce
 
         return () => clearTimeout(timer);
-    }, [holdings, customRules, customStocks, isLoaded]);
+    }, [holdings, customRules, customStocks, isLoaded, userId]);
 
     const addHolding = (stockCode: string, shares: number, acquisitionDate?: string) => {
         setHoldings(prev => {
@@ -120,10 +142,26 @@ export function usePortfolio() {
         });
     };
 
+    const generateShareId = async () => {
+        if (!userId) return;
+        const newShareId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        try {
+            const { error } = await supabase
+                .from('portfolio')
+                .update({ share_id: newShareId })
+                .eq('id', userId);
+            if (error) throw error;
+            setShareId(newShareId);
+        } catch (e) {
+            console.error("Failed to generate share ID", e);
+        }
+    };
+
     return {
         holdings,
         customRules,
         customStocks,
+        shareId,
         isLoaded,
         isSyncing,
         addHolding,
@@ -132,5 +170,6 @@ export function usePortfolio() {
         updateAcquisitionDate,
         addCustomRule,
         addStockName,
+        generateShareId,
     };
 }

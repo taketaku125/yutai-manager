@@ -42,22 +42,22 @@ export function BenefitTimeline({ events = [] }: BenefitTimelineProps) {
                             key={month}
                             className={cn(
                                 "rounded-2xl p-4 transition-all duration-300",
-                                "bg-white/5 backdrop-blur-sm border border-white/10",
-                                "hover:bg-white/10 hover:border-white/20",
-                                isCurrentMonth && "ring-2 ring-cyan-400/50 bg-cyan-400/5"
+                                "bg-white shadow-sm border border-slate-200",
+                                "hover:shadow-md hover:border-slate-300",
+                                isCurrentMonth && "ring-2 ring-cyan-500/50 bg-cyan-50"
                             )}
                         >
                             {/* Month Header */}
                             <div className="flex items-center gap-2 mb-3">
-                                <Calendar className="w-4 h-4 text-cyan-400" />
+                                <Calendar className="w-4 h-4 text-cyan-600" />
                                 <span className={cn(
                                     "font-semibold",
-                                    isCurrentMonth ? "text-cyan-400" : "text-white/80"
+                                    isCurrentMonth ? "text-cyan-600" : "text-slate-700"
                                 )}>
                                     {MONTH_NAMES[month]}
                                 </span>
                                 {isCurrentMonth && (
-                                    <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-cyan-400/20 text-cyan-300">
+                                    <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-700">
                                         今月
                                     </span>
                                 )}
@@ -66,7 +66,7 @@ export function BenefitTimeline({ events = [] }: BenefitTimelineProps) {
                             {/* Events */}
                             <div className="space-y-2">
                                 {monthEvents.length === 0 ? (
-                                    <p className="text-white/30 text-sm">予定なし</p>
+                                    <p className="text-slate-300 text-sm">予定なし</p>
                                 ) : (
                                     monthEvents.map((event, idx) => {
                                         if (!event || !event.category || !event.stock) return null;
@@ -79,11 +79,11 @@ export function BenefitTimeline({ events = [] }: BenefitTimelineProps) {
                                                 key={idx}
                                                 className={cn(
                                                     "rounded-xl p-3 text-sm",
-                                                    "bg-gradient-to-r from-white/5 to-transparent",
+                                                    "bg-slate-50",
                                                     "border-l-4",
                                                     event.type === "vesting"
-                                                        ? "border-l-amber-400"
-                                                        : "border-l-emerald-400"
+                                                        ? "border-l-amber-500"
+                                                        : "border-l-emerald-500"
                                                 )}
                                             >
                                                 <div className="flex items-start gap-2">
@@ -111,10 +111,10 @@ export function BenefitTimeline({ events = [] }: BenefitTimelineProps) {
                                                                 <span className="text-[10px] px-1 rounded bg-amber-500/20 text-amber-300">長期</span>
                                                             )}
                                                         </div>
-                                                        <p className="font-medium text-white/90 break-words">
+                                                        <p className="font-medium text-slate-800 break-words">
                                                             {event.stock.name || event.stock.code}
                                                         </p>
-                                                        <p className="text-white/50 text-xs mt-1 break-words">
+                                                        <p className="text-slate-500 text-xs mt-1 break-words">
                                                             {event.description}
                                                         </p>
                                                     </div>
